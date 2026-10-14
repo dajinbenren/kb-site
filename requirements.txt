@@ -1,0 +1,18 @@
+# kb-site 依赖清单（与 kefu-agent 同一套技术栈，版本钉死 = 复现一致）
+#
+# 选型说明：
+#   - FastAPI：异步 + 自带 Pydantic 参数校验，调大模型是一等公民
+#   - openai SDK：千问提供 OpenAI 兼容模式，换供应商只改 base_url
+#   - ChromaDB：嵌入式向量库，免独立部署（小公司养不起 Milvus 集群）
+#   - rank_bm25：BM25 关键词召回，与向量召回互补做 RRF 混合检索
+#   - httpx：rerank 接口不在兼容层里，必须自己发 HTTP
+#   - 刻意不引入 LangChain：核心链路手写，可控、可调试、面试能讲清
+
+fastapi==0.143.0          # Web 框架：路由 + 请求校验
+uvicorn==0.54.0           # ASGI 服务器：真正跑起 FastAPI 的进程
+pydantic==2.14.0          # 数据校验：把非法请求挡在业务代码之前
+openai==3.28.0            # 大模型 SDK（走千问 OpenAI 兼容层）
+python-dotenv==1.2.4      # 从 .env 读取 API key（密钥不进代码库）
+chromadb==1.5.9           # 向量数据库：RAG 的存储与相似度检索
+rank_bm25==0.2.2          # BM25 关键词检索：与向量检索互补做混合召回
+httpx==0.28.1             # HTTP 客户端：调用 rerank 等非兼容层接口

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星辰知识库助手</title>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --border: #e2e0d9;
+    --text: #2c2c2a;
+    --muted: #6b6a65;
+    --blue: #185fa5;
+    --blue-bg: #e6f1fb;
+    --teal: #0f6e56;
+    --teal-bg: #e1f5ee;
+    --coral: #993c1d;
+    --coral-bg: #faece7;
+    --amber: #854f0b;
+    --amber-bg: #faeeda;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text);
+    height: 100vh; display: flex; flex-direction: column;
+    font-size: 14px; line-height: 1.6;
+  }
+
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 12px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0;
+  }
+  header h1 { font-size: 15px; font-weight: 500; }
+  .badge {
+    font-size: 11px; padding: 2px 8px; border-radius: 10px;
+    background: var(--blue-bg); color: var(--blue); font-weight: 500;
+  }
+  .spacer { flex: 1; }
+
+  .tabs { display: flex; gap: 6px; }
+  .tab {
+    padding: 6px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface);
+    font-size: 13px; transition: all .15s;
+  }
+  .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+  .tab:hover:not(.active) { background: #f0efec; }
+
+  .btn {
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); cursor: pointer; font-size: 13px;
+  }
+  .btn:hover { background: #f0efec; }
+
+  main { flex: 1; display: flex; overflow: hidden; }
+
+  .chat-pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  #messages {
+    flex: 1; overflow-y: auto; padding: 24px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .empty { margin: auto; text-align: center; color: var(--muted); }
+  .empty h2 { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+  .samples { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+  .sample {
+    padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface); cursor: pointer; font-size: 13px; color: var(--muted);
+  }
+  .sample:hover { border-color: var(--blue); color: var(--text); }
+
+  .msg { display: flex; flex-direction: column; gap: 6px; max-width: 860px; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .role { font-size: 11px; color: var(--muted); }
+  .bubble {
+    padding: 12px 16px; border-radius: 12px; white-space: pre-wrap;
+    border: 1px solid var(--border); background: var(--surface);
+    max-width: 100%; overflow-x: auto;
+  }
+  .msg.user .bubble { background: var(--blue-bg); border-color: #b5d4f4; }
+
+  .meta { display: flex; flex-direction: column; gap: 6px; }
+  .src {
+    font-size: 12px; color: var(--teal); background: var(--teal-bg);
+    padding: 8px 12px; border-radius: 8px;
+  }
+  .steps {
+    font-size: 12px; background: var(--coral-bg); border: 1px solid #f5c4b3;
+    padding: 10px 12px; border-radius: 8px;
+  }
+  .step { margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed #f0997b; }
+  .step:last-child { border: none; margin: 0; padding: 0; }
+  .step b { color: var(--coral); font-weight: 500; }
+  .cached { color: var(--amber); background: var(--amber-bg); padding: 1px 6px;
+            border-radius: 8px; font-size: 11px; margin-left: 4px; }
+
+  .composer { border-top: 1px solid var(--border); padding: 14px 24px;
+              display: flex; gap: 10px; background: var(--surface); flex-shrink: 0; }
+  .composer textarea {
+    flex: 1; resize: none; padding: 10px 14px; border-radius: 10px;
+    border: 1px solid var(--border); font: inherit; min-height: 44px; max-height: 140px;
+  }
+  .composer textarea:focus { outline: none; border-color: var(--blue); }
+  .composer button {
+    padding: 0 22px; border-radius: 10px; border: none; background: var(--text);
+    color: #fff; cursor: pointer; font: inherit;
+  }
+  .composer button:disabled { background: #b4b2a9; cursor: not-allowed; }
+
+  aside {
+    width: 300px; border-left: 1px solid var(--border); background: var(--surface);
+    overflow-y: auto; padding: 18px; flex-shrink: 0;
+  }
+  aside h3 { font-size: 13px; font-weight: 500; margin-bottom: 10px; }
+  .stat { font-size: 12px; color: var(--muted); padding: 5px 0; display: flex;
+          justify-content: space-between; gap: 8px; }
+  .stat b { color: var(--text); font-weight: 500; }
+  .warn { background: var(--amber-bg); color: var(--amber); padding: 8px 10px;
+          border-radius: 8px; font-size: 12px; margin-top: 10px; }
+  .sess { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+          margin-bottom: 8px; cursor: pointer; font-size: 12px; }
+  .sess:hover { border-color: var(--blue); }
+  .sess small { color: var(--muted); display: block; }
+
+  .thinking { color: var(--muted); font-size: 13px; font-style: italic; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>星辰知识库助手</h1>
+  <span class="badge" id="modelBadge">模型加载中…</span>
+  <div class="spacer"></div>
+  <div class="tabs">
+    <div class="tab active" data-mode="rag">RAG 问答</div>
+    <div class="tab" data-mode="agent">Agent 工具调用</div>
+  </div>
+  <button class="btn" id="rebuildBtn">重建索引</button>
+  <button class="btn" id="newBtn">新会话</button>
+</header>
+
+<main>
+  <div class="chat-pane">
+    <div id="messages">
+      <div class="empty" id="empty">
+        <h2>选一个问题开始</h2>
+        <div>试试下面这些，看RAG 和 Agent 的差别</div>
+        <div class="samples" id="samples"></div>
+      </div>
+    </div>
+    <div class="composer">
+      <textarea id="input" placeholder="输入你的问题，Ctrl+Enter 发送"></textarea>
+      <button id="sendBtn">发送</button>
+    </div>
+  </div>
+
+  <aside>
+    <h3>运行状态</h3>
+    <div id="stats" class="stat">加载中…</div>
+    <h3 style="margin-top:20px">历史会话</h3>
+    <div id="sessions"><small style="color:var(--muted)">暂无</small></div>
+  </aside>
+</main>
+
+<script>
+let MODE = 'rag';
+let SESSION = null;
+const SAMPLES = {
+  rag: [
+    '入职满 3 年有多少天年假？',
+    'P1 阻断级故障多久必须恢复？',
+    '紧急发布需要什么审批？',
+    '核心业务模块的单测覆盖率要求是多少？'
+  ],
+  agent: [
+    '我出差住了一线城市酒店 4 晚一共 5600 元，制度下能报多少？超标比例多少？',
+    '入职满 3 年有多少天年假，租房补贴是多少？如果我工龄 5 年呢？',
+    '紧急发布需要什么审批？',
+    '公司代码可以推到 GitHub 公开仓库吗？泄露了怎么处罚？'
+  ]
+};
+
+const el = id => document.getElementById(id);
+
+// ---------- 模式切换 ----------
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    MODE = t.dataset.mode;
+    renderSamples();
+  };
+});
+
+function renderSamples() {
+  el('empty').style.display = 'flex';
+  const box = el('samples');
+  box.innerHTML = '';
+  SAMPLES[MODE].forEach(q => {
+    const d = document.createElement('div');
+    d.className = 'sample';
+    d.textContent = q;
+    d.onclick = () => { el('input').value = q; send(); };
+    box.appendChild(d);
+  });
+}
+
+// ---------- 健康状态 ----------
+async function loadHealth() {
+  try {
+    const r = await fetch('/api/health');
+    const h = await r.json();
+    el('modelBadge').textContent = h.chat_model + ' / ' + h.embed_model;
+    const v = h.vector_db;
+    let html = `<div class="stat"><span>对话模型</span><b>${h.chat_model}</b></div>
+                <div class="stat"><span>向量模型</span><b>${h.embed_model}</b></div>
+                <div class="stat"><span>知识库块数</span><b>${v.total}</b></div>
+                <div class="stat"><span>CHUNK_SIZE</span><b>${v.chunk_size}</b></div>
+                <div class="stat"><span>OVERLAP</span><b>${v.overlap}</b></div>
+                <div class="stat"><span>TOP_K</span><b>${v.top_k}</b></div>`;
+    if (v.degenerate) {
+      html += `<div class="warn">⚠ 库块数 ${v.total} ≤ TOP_K ${v.top_k}，检索会退化为全量注入，请加大语料</div>`;
+    }
+    el('stats').innerHTML = html;
+  } catch (e) {
+    el('modelBadge').textContent = '服务未连接';
+  }
+}
+
+async function loadSessions() {
+  try {
+    const r = await fetch('/api/sessions');
+    const list = await r.json();
+    const box = el('sessions');
+    if (!list.length) { box.innerHTML = '<small style="color:var(--muted)">暂无</small>'; return; }
+    box.innerHTML = '';
+    list.forEach(s => {
+      const d = document.createElement('div');
+      d.className = 'sess';
+      d.innerHTML = `<div>${s.title}</div>
+        <small>${s.mode.toUpperCase()} · ${s.n} 条 · ${new Date(s.created_at*1000).toLocaleString('zh-CN')}</small>`;
+      d.onclick = () => openSession(s.id);
+      box.appendChild(d);
+    });
+  } catch (e) {}
+}
+
+// ---------- 发送 ----------
+async function send() {
+  const q = el('input').value.trim();
+  if (!q) return;
+  el('input').value = '';
+  el('empty').style.display = 'none';
+  el('sendBtn').disabled = true;
+
+  addMsg('user', q, null, null);
+  const thinking = document.createElement('div');
+  thinking.className = 'msg';
+  thinking.innerHTML = '<div class="thinking">思考中…</div>';
+  el('messages').appendChild(thinking);
+  scroll();
+
+  try {
+    const r = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q, mode: MODE, session_id: SESSION })
+    });
+    const d = await r.json();
+    thinking.remove();
+    if (d.detail) { addMsg('assistant', '出错了：' + d.detail, null, null); }
+    else {
+      SESSION = d.session_id;
+      addMsg('assistant', d.answer, d.sources, d.steps);
+      loadSessions();
+    }
+  } catch (e) {
+    thinking.remove();
+    addMsg('assistant', '请求失败：' + e.message, null, null);
+  }
+  el('sendBtn').disabled = false;
+  el('input').focus();
+}
+
+function addMsg(role, text, sources, steps) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ' + role;
+  let html = `<div class="role">${role === 'user' ? '我' : '助手'}</div>
+              <div class="bubble"></div>`;
+  wrap.innerHTML = html;
+  wrap.querySelector('.bubble').textContent = text;
+
+  if (steps && steps.length) {
+    const s = document.createElement('div');
+    s.className = 'steps';
+    s.innerHTML = '<div style="color:var(--coral);font-weight:500;margin-bottom:6px">工具调用轨迹</div>' +
+      steps.map(st => `<div class="step"><b>第${st.turn}轮</b> ${st.tool}(${JSON.stringify(st.args)})
+        ${st.cached ? '<span class="cached">缓存命中</span>' : ''}
+        <br><span style="color:var(--muted)">↳ ${String(st.result).slice(0,80).replace(/\n/g,' ')}</span></div>`).join('');
+    wrap.appendChild(s);
+  }
+  if (sources && sources.length) {
+    const s = document.createElement('div');
+    s.className = 'src';
+    s.textContent = '📚 引用来源：' + sources.map(x => `${x.source} 第${x.idx}块`).join('、');
+    wrap.appendChild(s);
+  }
+  el('messages').appendChild(wrap);
+  scroll();
+}
+
+async function openSession(sid) {
+  SESSION = sid;
+  el('messages').innerHTML = '';
+  const r = await fetch('/api/sessions/' + sid);
+  const d = await r.json();
+  d.messages.forEach(m => addMsg(m.role, m.content, m.sources, m.steps));
+}
+
+el('sendBtn').onclick = send;
+el('input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send();
+});
+el('newBtn').onclick = () => { SESSION = null; el('messages').innerHTML = ''; renderSamples(); };
+el('rebuildBtn').onclick = async () => {
+  el('rebuildBtn').textContent = '重建中…';
+  await fetch('/api/rebuild', { method: 'POST' });
+  el('rebuildBtn').textContent = '重建索引';
+  loadHealth();
+};
+
+function scroll() { el('messages').scrollTop = el('messages').scrollHeight; }
+
+loadHealth();
+loadSessions();
+renderSamples();
+</script>
+</body>
+</html>

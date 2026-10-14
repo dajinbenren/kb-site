@@ -1,0 +1,13 @@
+# 密钥：API key 绝对不能进代码库（推到 GitHub 会被扫描机器人几分钟内盗刷）
+.env
+# 运行产物：向量库 / 会话数据库 / 字节码缓存
+chroma_db/
+app.db
+__pycache__/
+*.pyc
+# IDE 与系统垃圾
+.idea/
+.vscode/
+.DS_Store
+# 求职材料（含学校/联系方式等私人信息），随项目公开有隐私风险
+简历*.md
